@@ -1,114 +1,98 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import ReactMapboxGl, { Layer, Feature, Popup, Marker } from 'react-mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import scooters from '../data/ankara-scooters.json';
-import { useNavigate } from 'react-router-dom';
-
-const Map = ReactMapboxGl({
-    accessToken: process.env.REACT_APP_MAPBOX_TOKEN,
-});
+import React, { useState, useEffect, useMemo } from "react";
+import "mapbox-gl/dist/mapbox-gl.css";
+import scooters from "../data/ankara-scooters.json";
+import { useNavigate } from "react-router-dom";
+import Map, { Marker, Popup, Layer, Feature } from "react-map-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 const MapboxExample = () => {
-    const [selectedScooter, setSelectedScooter] = useState(null);
-    const navigate = useNavigate();
+  const [selectedScooter, setSelectedScooter] = useState(null);
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        console.log('Scooters data:', scooters);
-    }, []);
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
 
-    const pins = useMemo(
-        () =>
-            scooters.map((scooter) => (
-                <Marker
-                    key={scooter.id}
-                    coordinates={[scooter.longitude, scooter.latitude]}
-                ></Marker>
-            )),
-        [scooters],
-    );
+  const handleProfile = () => {
+    navigate("/profile");
+  };
 
-    useEffect(() => {
-        console.log('Scooters:', scooters);
-        console.log('Pins:', pins);
-    }, [scooters, pins]);
+  const handleMarkerClick = (scooter) => {
+    console.log("Marker clicked:", scooter);
+    setSelectedScooter(scooter);
+    console.log("Selected scooter state:", scooter);
+  };
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        navigate('/login');
-    };
+  const pins = () =>
+    scooters.map((scooter) => (
+      <Marker
+        key={scooter.id}
+        longitude={scooter.longitude}
+        latitude={scooter.latitude}
+        onClick={() => handleMarkerClick(scooter)}
+      >
+        {/* <div style={{ cursor: "pointer" }}>📍</div> */}
+      </Marker>
+    ));
 
-    const handleProfile = () => {
-        navigate('/profile');
-    };
+  useEffect(() => {
+    console.log("Selected scooter", selectedScooter);
 
-    return (
-        <div style={{ margin: '10px' }}>
-            <Map
-                center={[32.866287, 39.925533]} // Swapped latitude and longitude
-                zoom={[20]} // Adjust zoom for better visibility
-                style="mapbox://styles/mapbox/streets-v10"
-                containerStyle={{
-                    height: '98vh', // Adjusted height
-                    width: '94vw', // Adjusted width
-                }}
+    return () => {};
+  }, [selectedScooter]);
+
+  return (
+    <div>
+      <Map
+        mapStyle="mapbox://styles/mapbox/streets-v10"
+        mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
+        initialViewState={{
+          longitude: 32.866287,
+          latitude: 39.925533,
+          zoom: 12,
+        }}
+        style={{
+          height: "100vh",
+          width: "100wh",
+        }}
+      >
+        {pins}
+        {/* {popups} */}
+
+        {selectedScooter && (
+          <div>
+            <Popup
+              longitude={selectedScooter.longitude}
+              latitude={selectedScooter.latitude}
+              anchor="bottom"
+              offset={{
+                bottom: [0, -40],
+              }}
+              onOpen={() => {
+                console.log("Rendering popup for scooter:", selectedScooter);
+              }}
+              onClose={() => {
+                console.log("Popup closed");
+                setSelectedScooter(null);
+              }}
+              //   closeOnClick={true}
             >
-                {pins}
+              <div>
+                <h3>Scooter ID: {selectedScooter.id}</h3>
+                <p>Battery: {selectedScooter.battery}%</p>
+              </div>
+            </Popup>
+          </div>
+        )}
+      </Map>
 
-                <Layer
-                    type="symbol"
-                    id="scooters"
-                    layout={{
-                        'text-field': 'SCOOTER',
-                        'text-size': 12,
-                        'text-offset': [0, 0.6],
-                        'text-anchor': 'top',
-                    }}
-                    paint={{
-                        'text-color': '#ffffff', // Change text color for better contrast
-                    }}
-                >
-                    {scooters.map((scooter) => (
-                        <Feature
-                            key={scooter.id}
-                            coordinates={[scooter.longitude, scooter.latitude]}
-                            onClick={() => setSelectedScooter(scooter)}
-                        />
-                    ))}
-                </Layer>
-
-                <Layer
-                    type="symbol"
-                    id="marker"
-                    layout={{ 'icon-image': 'marker-15' }}
-                >
-                    <Feature coordinates={[32.866287, 39.925533]} />
-                </Layer>
-
-                {selectedScooter && (
-                    <Popup
-                        coordinates={[
-                            selectedScooter.longitude,
-                            selectedScooter.latitude,
-                        ]}
-                        offset={{
-                            bottom: [0, -40],
-                        }}
-                        onClose={() => setSelectedScooter(null)}
-                    >
-                        <div>
-                            <h3>Scooter ID: {selectedScooter.id}</h3>
-                            <p>Battery: {selectedScooter.battery}%</p>
-                        </div>
-                    </Popup>
-                )}
-            </Map>
-
-            <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
-                <button onClick={handleLogout}>Logout</button>
-                <button onClick={handleProfile}>Profile</button>
-            </div>
-        </div>
-    );
+      <div style={{ position: "absolute", top: "10px", right: "10px" }}>
+        <button onClick={handleLogout}>Logout</button>
+        <button onClick={handleProfile}>Profile</button>
+      </div>
+    </div>
+  );
 };
 
 export default MapboxExample;
