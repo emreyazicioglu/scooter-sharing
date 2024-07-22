@@ -29,17 +29,17 @@ export class UserController {
         return this.userService.findAll();
     }
 
+    @Get('profile')
+    @UseGuards(JwtGuard)
+    getProfile(@Req() req: Request) {
+        const id = req.user.id;
+        return this.userService.findOne(+id);
+    }
+
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.userService.findOne(+id);
     }
-
-    // @Get('profile')
-    // @UseGuards(JwtGuard)
-    // getProfile(@Req() req: Request) {
-    //     const id = req.user.id;
-    //     return this.userService.findOne(+id);
-    // }
 
     @Patch(':id')
     update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {

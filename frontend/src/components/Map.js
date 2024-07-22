@@ -1,13 +1,32 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
-import scooters from "../data/ankara-scooters.json";
 import { useNavigate } from "react-router-dom";
 import Map, { Marker, Popup, Layer, Feature } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import axios from "axios";
 
 const MapboxExample = () => {
   const [selectedScooter, setSelectedScooter] = useState(null);
+  const [scooters, setScooters] = useState([]);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    async function fetchScooters() {
+      try {
+        const response = await axios.get("http://localhost:3000/scooters", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setScooters(response.data);
+      } catch (error) {
+        setError("Invalid token");
+      }
+    }
+    fetchScooters();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -22,6 +41,39 @@ const MapboxExample = () => {
     console.log("Marker clicked:", scooter);
     setSelectedScooter(scooter);
     console.log("Selected scooter state:", scooter);
+  };
+
+  const handleStartRide = async (scooter) => {
+    try {
+      console.log(token);
+      const response = await axios.post(
+        `http://localhost:3000/scooters/${selectedScooter.id}/start`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+    } catch (error) {
+      setError("Invalid token");
+    }
+  };
+
+  const handleStopRide = async (scooter) => {
+    try {
+      const response = await axios.post(
+        `http://localhost:3000/scooters/${selectedScooter.id}/stop`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+    } catch (error) {
+      setError("Invalid token");
+    }
   };
 
   return (
@@ -69,7 +121,13 @@ const MapboxExample = () => {
           >
             <div>
               <h3>Scooter ID: {selectedScooter.id}</h3>
-              <p>Battery: {selectedScooter.battery}%</p>
+              <p>Battery: {selectedScooter.battery_status}%</p>
+              <button onClick={() => handleStartRide(selectedScooter)}>
+                Start
+              </button>
+              <button onClick={() => handleStopRide(selectedScooter)}>
+                Stop
+              </button>
             </div>
           </Popup>
         )}
@@ -77,7 +135,6 @@ const MapboxExample = () => {
           You are here
         </Popup>
       </Map>
-
       <div style={{ position: "absolute", top: "10px", right: "10px" }}>
         <button onClick={handleLogout}>Logout</button>
         <button onClick={handleProfile}>Profile</button>
